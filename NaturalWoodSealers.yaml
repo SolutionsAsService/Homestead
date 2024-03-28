@@ -1,0 +1,86 @@
+natural_wood_sealers:
+  - name: Tung Oil
+    origin: Extracted from the nuts of the Tung tree
+    application_methods:
+      - brush
+      - cloth
+    drying_time: 48 hours between coats
+    total_coats: 4-5
+    benefits:
+      - Non-toxic
+      - Enhances wood grain
+      - Water resistant
+    drawbacks:
+      - Requires multiple coats
+      - Longer drying time
+
+  - name: Linseed Oil
+    origin: Extracted from the seeds of the flax plant
+    application_methods:
+      - brush
+      - cloth
+    drying_time: 24-72 hours between coats
+    total_coats: 2-3
+    benefits:
+      - Penetrates deeply into wood
+      - Natural wood look
+      - Protective against scratches
+    drawbacks:
+      - Can take weeks to fully cure
+      - Requires maintenance
+
+  - name: Beeswax
+    origin: Produced by bees
+    application_methods:
+      - cloth
+    drying_time: Immediate to touch, 24 hours for full cure
+    total_coats: 1-2
+    benefits:
+      - Easy to apply
+      - Safe for food contact surfaces
+      - Gives a soft sheen
+    drawbacks:
+      - Less durable
+      - Needs reapplication over time
+
+  - name: Carnauba Wax
+    origin: Extracted from the leaves of the carnauba palm
+    application_methods:
+      - cloth
+    drying_time: Immediate to touch, 1-2 hours for full cure
+    total_coats: 1-3
+    benefits:
+      - Hard and durable finish
+      - Water resistant
+      - Shiny finish
+    drawbacks:
+      - Harder to apply
+      - Requires buffing
+
+  - name: Shellac
+    origin: Secreted by the female lac bug
+    application_methods:
+      - brush
+    drying_time: 1-2 hours between coats
+    total_coats: 2-4
+    benefits:
+      - Fast drying
+      - Enhances wood color
+      - Natural and safe for toys
+    drawbacks:
+      - Not waterproof
+      - Alcohol based solvent required for application
+
+  - name: Walnut Oil
+    origin: Pressed from walnuts
+    application_methods:
+      - cloth
+    drying_time: 24-48 hours between coats
+    total_coats: 1-2
+    benefits:
+      - Food safe
+      - Easy to apply
+      - Enhances wood grain
+    drawbacks:
+      - May cause allergies (nut-based)
+      - Requires frequent reapplication
