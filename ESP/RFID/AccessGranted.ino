@@ -3,6 +3,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <MFRC522.h>
+#include <Fonts/FreeSans9pt7b.h>
 
 // OLED display settings for a 128x32 mini OLED
 #define SCREEN_WIDTH 128 
@@ -28,9 +29,9 @@ void setup() {
   }
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
-  display.setTextSize(1);
-  display.setCursor(0, 0);
-  display.print("RFID System Ready");
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(0, 20);
+  display.print("RFID Ready");
   display.display();
   
   // Initialize SPI for RFID module and then the RFID reader
@@ -69,18 +70,19 @@ void loop() {
   
   // Return to idle message
   display.clearDisplay();
-  display.setTextSize(1);
-  display.setCursor(0, 0);
-  display.print("RFID System Ready");
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(0, 20);
+  display.print("RFID Ready");
   display.display();
 }
 
 void displayAccessGranted() {
   display.clearDisplay();
-  display.setTextSize(2);  // Increase text size for emphasis
-  display.setCursor(0, 0);
+  display.setFont(&FreeSans9pt7b); // Use a clearer font
+  display.setCursor(0, 15);
   display.print("Access");
-  display.setCursor(0, 20);
+  display.setCursor(0, 30);
   display.print("Granted");
   display.display();
 }
+
