@@ -4,7 +4,7 @@
 #include <Adafruit_SSD1306.h>
 #include <MFRC522.h>
 
-// OLED display settings
+// OLED display settings (128x32)
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 32
 #define OLED_RESET    -1
@@ -19,73 +19,97 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define RFID_RST_PIN 2  // RST
 MFRC522 mfrc522(RFID_SS_PIN, RFID_RST_PIN);
 
-// Keyes RGB LED settings (changed to GPIO 12-14)
+// Keyes RGB LED settings (GPIO 12, 13, 14)
 #define LED_RED_PIN   12
 #define LED_GREEN_PIN 13
 #define LED_BLUE_PIN  14
 
-// Simple blockchain representation as a JSON array string
+// Blockchain variables
 String blockchain = "[\"Genesis Block\"]";
-int blockCount = 1;  // Genesis block counts as block 1
+int blockCount = 1;  // Genesis counts as block 1
 
-// Function to wrap and display text on the OLED
-void displayWrappedText(String title, String message) {
+// Variables for scrolling text on OLED
+String scrollLines[50]; // Array to hold wrapped lines (max 50 lines)
+int totalScrollLines = 0;  // Number of lines stored
+int scrollOffset = 0;      // Current scroll offset
+unsigned long lastScrollTime = 0;
+const unsigned long scrollInterval = 2000; // scroll update every 2 seconds
+const int visibleLines = 4;  // With 32px height and text size 1, we have 4 lines
+
+// Wraps a given message into lines of up to 'maxWidth' characters and stores them along with title lines.
+void updateScrollLines(String title, String message) {
+  int index = 0;
+  scrollLines[index++] = title;
+  scrollLines[index++] = "------------------";
+  
+  int maxWidth = 21; // Approx. characters per line
+  int start = 0;
+  while (start < message.length() && index < 50) {
+    scrollLines[index++] = message.substring(start, (int)min((unsigned int)(start + maxWidth), message.length()));
+    start += maxWidth;
+  }
+  totalScrollLines = index;
+  scrollOffset = 0;
+}
+
+// Displays a "page" (visibleLines lines) from the scrollLines array, starting at scrollOffset.
+void displayScrollPage() {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   
-  // Print title and separator
-  display.println(title);
-  display.println("------------------");
-
-  int maxWidth = 21; // Approx. max characters per line
-  int start = 0;
-  while (start < message.length()) {
-    display.println(message.substring(start, (int)min((unsigned int)(start + maxWidth), message.length())));
-    start += maxWidth;
+  for (int i = 0; i < visibleLines; i++) {
+    int lineIndex = scrollOffset + i;
+    if (lineIndex < totalScrollLines) {
+      display.println(scrollLines[lineIndex]);
+    }
   }
   display.display();
 }
 
-// Function to add a block to the blockchain
+// Adds a new block to the blockchain and updates the scrollLines for display.
 void addBlock(String tagID) {
   blockCount++;
   String newBlock = "Block " + String(blockCount) + ": " + tagID;
-  // Remove the closing bracket, add new block, then close the array
+  // Append new block into our blockchain string (JSON-like format)
   blockchain = blockchain.substring(0, blockchain.length() - 1) + ",\"" + newBlock + "\"]";
-  displayWrappedText("Blockchain Updated", blockchain);
+  updateScrollLines("Blockchain Updated", blockchain);
+  displayScrollPage();
 }
 
-// Function to check for RFID scans and process them
+// Checks for RFID tag scans and processes them.
 void checkRFID() {
-  // Look for new RFID card
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
     String tagID = "";
-    // Construct tagID from UID bytes
+    // Build tagID string from UID bytes
     for (byte i = 0; i < mfrc522.uid.size; i++) {
-      if (mfrc522.uid.uidByte[i] < 0x10) {
-        tagID += "0";
-      }
+      if (mfrc522.uid.uidByte[i] < 0x10) tagID += "0";
       tagID += String(mfrc522.uid.uidByte[i], HEX);
     }
     tagID.toUpperCase();
     
-    // Display scanned tag
-    displayWrappedText("RFID Scanned", "Tag: " + tagID);
+    // Immediately display the scanned tag
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0,0);
+    display.println("RFID Scanned:");
+    display.println("Tag: " + tagID);
+    display.display();
     delay(1000);
     
-    // Add the RFID tag as a new block to the blockchain
+    // Add the scanned tag to the blockchain
     addBlock(tagID);
     
-    // Light up the LED green as proof of successful scan
+    // Light up the LED green to indicate success (green on LED_GREEN_PIN)
     digitalWrite(LED_RED_PIN, LOW);
     digitalWrite(LED_GREEN_PIN, HIGH);
     digitalWrite(LED_BLUE_PIN, LOW);
-    delay(2000); // Keep green light on for 2 seconds
+    delay(2000);  // Hold the green light for 2 seconds
     digitalWrite(LED_GREEN_PIN, LOW);
     
-    // Halt further processing for this card
+    // Halt RFID processing for this card
     mfrc522.PICC_HaltA();
   }
 }
@@ -101,7 +125,7 @@ void setup() {
   digitalWrite(LED_GREEN_PIN, LOW);
   digitalWrite(LED_BLUE_PIN, LOW);
 
-  // Initialize I2C for OLED
+  // Initialize I2C for OLED and OLED itself
   Wire.begin(OLED_SDA, OLED_SCL);
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
     Serial.println("OLED allocation failed");
@@ -110,15 +134,30 @@ void setup() {
   display.clearDisplay();
   display.display();
 
-  // Initialize RFID module
+  // Initialize RFID module via SPI
   SPI.begin();
   mfrc522.PCD_Init();
 
-  // Display initial blockchain state
-  displayWrappedText("Blockchain", blockchain);
+  // Set up initial blockchain display
+  updateScrollLines("Blockchain", blockchain);
+  displayScrollPage();
+  lastScrollTime = millis();
 }
 
 void loop() {
-  // Continuously check for RFID scans
+  // Check for RFID scans
   checkRFID();
+
+  // Update scroll offset if enough time has passed
+  if (millis() - lastScrollTime > scrollInterval) {
+    // Only scroll if total lines exceed the visible lines
+    if (totalScrollLines > visibleLines) {
+      scrollOffset++;
+      if (scrollOffset > totalScrollLines - visibleLines) {
+        scrollOffset = 0;
+      }
+      displayScrollPage();
+    }
+    lastScrollTime = millis();
+  }
 }
