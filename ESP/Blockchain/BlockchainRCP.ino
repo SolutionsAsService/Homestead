@@ -57,7 +57,7 @@ void displayScrollPage() {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
+  display.setCursor(4, 4);
   
   for (int i = 0; i < visibleLines; i++) {
     int lineIndex = scrollOffset + i;
@@ -93,7 +93,7 @@ void checkRFID() {
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
-    display.setCursor(4,4);
+    display.setCursor(2,2);
     display.println("RFID Scanned:");
     display.println("Tag: " + tagID);
     display.display();
