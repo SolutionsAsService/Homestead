@@ -21,19 +21,23 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 // Create a web server on port 80
 WebServer server(80);
 
-// Serve the dark-themed, mobile-responsive calculator page with AJAX
+// Serve the calculator page
 void handleRoot() {
   String html = "<!DOCTYPE html><html><head><meta charset='utf-8'>";
   html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
   html += "<title>ESP32 Calculator</title>";
   html += "<style>";
-  html += "body { background-color: #121212; color: #e0e0e0; font-family: Arial, sans-serif; margin: 0; padding: 20px; }";
-  html += "h1 { text-align: center; color: #ffffff; }";
-  html += "form { background-color: #1e1e1e; padding: 20px; margin: auto; width: 90%; max-width: 400px; border-radius: 8px; box-shadow: 0 0 10px rgba(255,255,255,0.1); }";
-  html += "input[type='text'], select { padding: 10px; margin: 10px 0; width: 100%; border: 1px solid #333; border-radius: 4px; background-color: #2a2a2a; color: #fff; }";
-  html += "input[type='submit'] { padding: 10px; width: 100%; background-color: #bb86fc; border: none; color: #121212; font-size: 16px; border-radius: 4px; cursor: pointer; }";
-  html += "input[type='submit']:hover { background-color: #985eff; }";
-  html += "#result { text-align: center; font-size: 18px; margin-top: 20px; color: #fff; }";
+  html += "body { font-family: Arial, sans-serif; background-color: #f2f2f2; margin: 0; padding: 20px; transition: background-color 0.3s ease; color: #333; }";
+  html += "h1 { text-align: center; color: #333; }";
+  html += "form { background-color: #fff; padding: 20px; margin: auto; width: 90%; max-width: 400px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); transition: background-color 0.3s ease; }";
+  html += "input[type='text'], select { padding: 10px; margin: 10px 0; width: 100%; border: 1px solid #ccc; border-radius: 4px; }";
+  html += "input[type='submit'] { padding: 10px; width: 100%; background-color: #4CAF50; border: none; color: white; font-size: 16px; border-radius: 4px; cursor: pointer; }";
+  html += "input[type='submit']:hover { background-color: #45a049; }";
+  html += "#result { text-align: center; font-size: 18px; margin-top: 20px; color: #333; }";
+  html += ".switch { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); }";
+  html += ".switch input { display: none; }";
+  html += ".switch-label { font-size: 18px; color: #333; cursor: pointer; padding: 10px; border-radius: 50px; background-color: #ccc; }";
+  html += ".switch input:checked + .switch-label { background-color: #4CAF50; color: white; }";
   html += "</style>";
   html += "</head><body>";
   html += "<h1>ESP32 Calculator</h1>";
@@ -49,7 +53,25 @@ void handleRoot() {
   html += "<input type='submit' value='Calculate'>";
   html += "</form>";
   html += "<div id='result'></div>";
+  
+  // Theme toggle switch
+  html += "<div class='switch'>";
+  html += "<input type='checkbox' id='themeToggle' onchange='toggleTheme()'>";
+  html += "<label class='switch-label' for='themeToggle'>Light/Dark</label>";
+  html += "</div>";
+  
   html += "<script>";
+  html += "let currentTheme = localStorage.getItem('theme') || 'light';";
+  html += "if (currentTheme === 'dark') { document.body.classList.add('dark'); document.getElementById('themeToggle').checked = true; }";
+  html += "function toggleTheme() {";
+  html += "  if (document.getElementById('themeToggle').checked) {";
+  html += "    document.body.classList.add('dark');";
+  html += "    localStorage.setItem('theme', 'dark');";
+  html += "  } else {";
+  html += "    document.body.classList.remove('dark');";
+  html += "    localStorage.setItem('theme', 'light');";
+  html += "  }";
+  html += "}";
   html += "document.getElementById('calcForm').addEventListener('submit', function(e){";
   html += "  e.preventDefault();";
   html += "  var formData = new FormData(this);";
