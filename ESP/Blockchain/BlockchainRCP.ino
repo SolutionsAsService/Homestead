@@ -6,7 +6,7 @@
 
 // OLED display settings
 #define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
+#define SCREEN_HEIGHT 32
 #define OLED_RESET    -1
 #define OLED_ADDRESS  0x3C  // Common OLED I2C address
 #define OLED_SDA      21
