@@ -5,8 +5,8 @@
 #include <Adafruit_SSD1306.h>
 
 // Replace with your network credentials
-const char* ssid = "emeraldcity";
-const char* password = "spacemonkeys";
+const char* ssid = "";
+const char* password = "";
 
 // OLED display settings
 #define SCREEN_WIDTH 128
