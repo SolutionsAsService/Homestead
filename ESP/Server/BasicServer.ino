@@ -5,8 +5,8 @@
 #include <Adafruit_SSD1306.h>
 
 // Replace with your network credentials
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "emeraldcity";
+const char* password = "spacemonkeys";
 
 // OLED display settings
 #define SCREEN_WIDTH 128
@@ -44,28 +44,39 @@ void handleRoot() {
 void setup() {
   Serial.begin(115200);
 
-  // Initialize OLED display
-  if(!display.begin(SSD1306_I2C_ADDRESS, OLED_RESET)) {
+  // Initialize OLED display (using 0x3C as the I2C address)
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
     for(;;);
   }
-  display.display();
-  delay(2000); // Pause for 2 seconds
   display.clearDisplay();
-
-  // Connect to Wi-Fi
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
+
+  // Show initial message
   display.setCursor(0, 0);
   display.println("Connecting to Wi-Fi...");
   display.display();
+
+  // Begin Wi-Fi connection
   WiFi.begin(ssid, password);
-  
+  Serial.print("Connecting to Wi-Fi");
+
+  // Increase the number of attempts to wait longer (here up to 20 seconds)
   int attempt = 0;
-  while (WiFi.status() != WL_CONNECTED && attempt < 20) {
+  while (WiFi.status() != WL_CONNECTED && attempt < 40) {
     delay(500);
     Serial.print(".");
     attempt++;
+
+    // Update OLED with attempt count and current WiFi.status() code
+    display.clearDisplay();
+    display.setCursor(2, 2);
+    display.print("Attempt ");
+    display.print(attempt);
+    display.print(": ");
+    display.println(WiFi.status());
+    display.display();
   }
   
   display.clearDisplay();
@@ -73,16 +84,23 @@ void setup() {
     display.println("Wi-Fi Connected!");
     display.print("IP: ");
     display.println(WiFi.localIP());
+    Serial.println("\nWi-Fi Connected!");
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
   } else {
     display.println("Wi-Fi Connection Failed!");
+    Serial.println("\nWi-Fi Connection Failed!");
   }
   display.display();
+  delay(2000);
 
-  // Start the server
+  // Set up the web server
   server.on("/", handleRoot);
   server.begin();
+  Serial.println("HTTP server started");
 }
 
 void loop() {
+  // Listen for client connections
   server.handleClient();
 }
