@@ -1,14 +1,26 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <MFRC522.h>
 
 // OLED display settings
 #define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 32
+#define SCREEN_HEIGHT 64
 #define OLED_RESET    -1
 #define OLED_ADDRESS  0x3C  // Common OLED I2C address
 #define OLED_SDA      21     // Adjusted for new OLED
 #define OLED_SCL      22
+
+// RFID RC522 settings
+#define SDA_PIN 5
+#define RST_PIN 2
+#define SS_PIN  5
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+
+// Keyes RGB LED settings
+#define RED_PIN    25
+#define GREEN_PIN  26
+#define BLUE_PIN   27
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -51,6 +63,36 @@ void handleAddBlock(String newBlock) {
   displayWrappedText("POST /addblock", "Block: " + newBlock);
 }
 
+// Initialize RFID reader
+void initRFID() {
+  SPI.begin();  // Initialize SPI bus
+  mfrc522.PCD_Init();  // Initialize the MFRC522 RFID reader
+}
+
+// Function to handle RFID scan and trigger blockchain RPC
+void handleRFIDScan() {
+  if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
+    String tagID = "";
+    for (byte i = 0; i < mfrc522.uid.size; i++) {
+      tagID += String(mfrc522.uid.uidByte[i], HEX);
+    }
+    // Display RFID scan result
+    displayWrappedText("RFID Scanned", "Tag ID: " + tagID);
+    
+    // Add a block to blockchain for the scanned tag
+    handleAddBlock(tagID);  // Add tagID as a new block in the blockchain
+
+    // Trigger the green light on the Keyes RGB LED
+    digitalWrite(RED_PIN, LOW);   // Turn off red
+    digitalWrite(GREEN_PIN, HIGH); // Turn on green
+    digitalWrite(BLUE_PIN, LOW);  // Turn off blue
+    delay(2000);  // Keep green light on for 2 seconds
+    
+    // Turn off the LED after showing green light
+    digitalWrite(GREEN_PIN, LOW); // Turn off green
+  }
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -68,22 +110,29 @@ void setup() {
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
 
-  // Display initial message
+  // Initialize RFID reader
+  initRFID();
+
+  // Initialize Keyes RGB LED pins
+  pinMode(RED_PIN, OUTPUT);
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(BLUE_PIN, OUTPUT);
+
+  // Initialize LED to be off
+  digitalWrite(RED_PIN, LOW);
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(BLUE_PIN, LOW);
+
+  // Display an initial message on OLED
   display.println("Initializing...");
   display.display();
-  
-  // Simulating blockchain interactions
-  delay(2000);  // Wait for a bit
+  delay(2000);
 
   // Simulate displaying the current blockchain
   handleGetChain();
-  delay(3000);  // Show the current blockchain for a few seconds
-
-  // Simulate adding a new block to the blockchain
-  handleAddBlock("New Block");
-  delay(3000);  // Display the new blockchain with the added block
 }
 
 void loop() {
-  // Nothing needed for now, everything is handled in setup
+  // Continuously check for RFID scan
+  handleRFIDScan();
 }
