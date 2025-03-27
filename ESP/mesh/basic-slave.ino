@@ -1,8 +1,12 @@
 /******************************
- * Slave Node (Node B)
- * 
- * This ESP32 code connects to WiFi with a static IP and runs a TCP server on port 5000.
- * When a connection is made (by the master), it sends a simple greeting message.
+ * Peer Node – Mesh Connection
+ *
+ * This sketch connects to WiFi with a static IP,
+ * starts a TCP server on port 5000, and waits for 
+ * connection requests from the master node.
+ *
+ * When the master connects, it responds with "OK"
+ * and logs the connection in the serial monitor.
  ******************************/
 
 #include <WiFi.h>
@@ -15,8 +19,8 @@
 const char* ssid = "emeraldcity";
 const char* password = "spacemonkeys";
 
-// Set a static IP for the slave node (Node B)
-IPAddress local_IP(192,168,1,101);
+// Assign a unique static IP for this peer
+IPAddress local_IP(192,168,1,101);  // Change this for each peer
 IPAddress gateway(192,168,1,1);
 IPAddress subnet(255,255,255,0);
 
@@ -28,8 +32,8 @@ WiFiServer server(5000);
 void setup() {
   Serial.begin(115200);
   delay(100);
-
-  // Configure static IP and connect to WiFi
+  
+  // Configure WiFi with static IP and connect
   WiFi.config(local_IP, gateway, subnet);
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi");
@@ -40,8 +44,8 @@ void setup() {
   Serial.println();
   Serial.print("Connected. IP: ");
   Serial.println(WiFi.localIP().toString());
-
-  // Start the TCP server
+  
+  // Start TCP server
   server.begin();
   Serial.println("TCP server started on port 5000");
 }
@@ -50,18 +54,19 @@ void setup() {
 // Main Loop
 //-------------------------
 void loop() {
-  // Check for an incoming client connection
   WiFiClient client = server.available();
+  
   if (client) {
-    Serial.println("Client connected.");
-    delay(10); // Small delay to allow connection stabilization
-
-    // Send a greeting message to the connected client (master)
-    client.println("Hello from Node B");
-
-    // Close the connection
+    Serial.println("Master connected.");
+    
+    // Send response to master
+    client.println("OK");
+    
+    // Wait briefly before closing connection
+    delay(50);
     client.stop();
-    Serial.println("Client disconnected.");
+    Serial.println("Connection closed.");
   }
-  delay(10);  // Brief delay to ease CPU load
+  
+  delay(10);
 }
