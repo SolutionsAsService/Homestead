@@ -1,5 +1,4 @@
 /*********
-  Modified by ChatGPT
   Master code that continuously scans the I2C bus and displays a live node count
   and connected device addresses on an OLED.
   
