@@ -1,8 +1,7 @@
 /*********
-  Slave code for ESP32 I2C slave communication.
+  Slave code for ESP32 I2C communication.
   
-  This sketch sets up an I²C slave that responds to master's requests
-  by sending back a packet count and a simple message.
+  Note: If you intend to have multiple slaves on the same bus, each must have a unique address.
   
   Required library:
     - Wire.h
@@ -10,12 +9,12 @@
 
 #include <Wire.h>
 
-#define I2C_DEV_ADDR 0x55
+#define I2C_DEV_ADDR 0x55  // Change this for each slave if you have more than one
 
 uint32_t packetCount = 0;
 
 void onRequest() {
-  // Send the current packet count and a message
+  // When the master requests data, send the current packet count and a message
   Wire.print(packetCount);
   Wire.print(" Packets.");
   Serial.println("onRequest triggered");
