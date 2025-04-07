@@ -23,11 +23,11 @@
 #define SMTP_PORT       465
 
 /* The sign in credentials */
-#define AUTHOR_EMAIL "nm.esp.man@gmail.com"
-#define AUTHOR_PASSWORD "mfod prdz uxxo uyfx"
+#define AUTHOR_EMAIL "email"
+#define AUTHOR_PASSWORD "pass"
 
 /* Recipient's email*/
-#define RECIPIENT_EMAIL "dylanwong007@gmail.com"
+#define RECIPIENT_EMAIL "recep"
 
 // Global SMTPSession object for email transport
 SMTPSession smtp;
