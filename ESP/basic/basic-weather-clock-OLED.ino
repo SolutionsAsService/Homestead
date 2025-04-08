@@ -12,7 +12,7 @@ const char* ssid       = "emeraldcity";
 const char* password   = "spacemonkeys";
 const char* city       = "Taos";
 const char* country    = "US";
-const char* owmApiKey  = "29791c1b9f625367055f374a4260a2fc";
+const char* owmApiKey  = "API KEY";
 const char* ntpServer  = "pool.ntp.org";
 const char* timezone   = "MST7MDT";  // POSIX TZ for MST/MDT
 
