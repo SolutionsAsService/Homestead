@@ -1,6 +1,8 @@
 #include <WiFi.h>
+#include <WebServer.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <pgmspace.h>  // for PROGMEM/FPSTR
 
 // ——— Wi‑Fi credentials ———
 const char* ssid     = "emeraldcity";
@@ -16,99 +18,14 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 // ——— LED pins & state ———
 const int redLedPin   = 25;
 const int greenLedPin = 26;
-String redState   = "OFF";
-String greenState = "OFF";
+bool redState   = false;
+bool greenState = false;
 
-// ——— Web server on port 80 ———
-WiFiServer server(80);
+// ——— Synchronous web server ———
+WebServer server(80);
 
-void setup() {
-  Serial.begin(115200);
-
-  // Init OLED (I²C on 21=SDA, 22=SCL) :contentReference[oaicite:3]{index=3}
-  Wire.begin(21, 22);
-  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
-    Serial.println("OLED init failed");
-    while (true) delay(1000);
-  }
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-
-  // Show boot message
-  display.setCursor(0,0);
-  display.println("Booting...");
-  display.display();
-
-  // Setup LEDs
-  pinMode(redLedPin, OUTPUT);
-  pinMode(greenLedPin, OUTPUT);
-  digitalWrite(redLedPin,   LOW);
-  digitalWrite(greenLedPin, LOW);
-
-  // Connect to Wi‑Fi
-  display.clearDisplay();
-  display.setCursor(0,0);
-  display.println("Connecting WiFi...");
-  display.display();
-
-  WiFi.begin(ssid, password);
-  unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  // Display Wi‑Fi result & IP
-  display.clearDisplay();
-  display.setCursor(0,0);
-  if (WiFi.status() == WL_CONNECTED) {
-    display.println("WiFi Connected");
-    display.print("IP:");
-    display.println(WiFi.localIP());
-  } else {
-    display.println("WiFi Failed!");
-  }
-  display.display();
-
-  // Start server
-  server.begin();
-  Serial.println("Server started at " + WiFi.localIP().toString());
-}
-
-void loop() {
-  // Reconnect if dropped
-  if (WiFi.status() != WL_CONNECTED) {
-    WiFi.reconnect();
-    delay(1000);
-  }
-
-  // Handle web clients
-  WiFiClient client = server.available();
-  if (client) {
-    String req = client.readStringUntil('\r');
-    client.flush();
-
-    // Parse URL and set LEDs :contentReference[oaicite:4]{index=4}
-    if (req.indexOf("GET /red/on")    >= 0) { digitalWrite(redLedPin, HIGH);   redState   = "ON";  }
-    if (req.indexOf("GET /red/off")   >= 0) { digitalWrite(redLedPin, LOW);    redState   = "OFF"; }
-    if (req.indexOf("GET /green/on")  >= 0) { digitalWrite(greenLedPin, HIGH); greenState = "ON";  }
-    if (req.indexOf("GET /green/off") >= 0) { digitalWrite(greenLedPin, LOW);  greenState = "OFF"; }
-
-    // Update OLED with current states
-    display.clearDisplay();
-    display.setCursor(0,0);
-    display.println("IP: " + WiFi.localIP().toString());
-    display.print("Red: ");   display.println(redState);
-    display.print("Green: "); display.println(greenState);
-    display.display();
-
-    // Send HTML page with buttons :contentReference[oaicite:5]{index=5}
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-Type: text/html");
-    client.println("Connection: close");
-    client.println();
-    client.print(R"rawliteral(
+// ——— HTML page stored in flash ———
+static const char htmlPage[] PROGMEM = R"rawliteral(
 <!DOCTYPE html><html><head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -121,24 +38,106 @@ void loop() {
   </style>
 </head><body>
   <h1>ESP32 LED Control</h1>
-  <p>Red LED: )rawliteral");
-    client.print(redState);
-    client.print(R"rawliteral(</p>
+  <p>Red LED: %RED%</p>
   <p>
     <a href="/red/on"><button class="button on">ON</button></a>
     <a href="/red/off"><button class="button off">OFF</button></a>
   </p>
-  <p>Green LED: )rawliteral");
-    client.print(greenState);
-    client.print(R"rawliteral(</p>
+  <p>Green LED: %GREEN%</p>
   <p>
     <a href="/green/on"><button class="button on">ON</button></a>
     <a href="/green/off"><button class="button off">OFF</button></a>
   </p>
 </body></html>
-)rawliteral");
+)rawliteral";
 
-    delay(1);
-    client.stop();
+// ——— Handlers ———
+void handleRoot() {
+  // Load template from flash, replace placeholders, send it
+  String page = FPSTR(htmlPage);                      // FPSTR casts PROGMEM to FlashStringHelper :contentReference[oaicite:0]{index=0}
+  page.replace("%RED%",   redState   ? "ON" : "OFF");
+  page.replace("%GREEN%", greenState ? "ON" : "OFF");
+  server.send(200, "text/html", page);
+}
+
+void handleRedOn() {
+  redState = true;
+  digitalWrite(redLedPin, HIGH);
+  server.sendHeader("Location", "/", true);
+  server.send(302, "text/plain", "");
+}
+
+void handleRedOff() {
+  redState = false;
+  digitalWrite(redLedPin, LOW);
+  server.sendHeader("Location", "/", true);
+  server.send(302, "text/plain", "");
+}
+
+void handleGreenOn() {
+  greenState = true;
+  digitalWrite(greenLedPin, HIGH);
+  server.sendHeader("Location", "/", true);
+  server.send(302, "text/plain", "");
+}
+
+void handleGreenOff() {
+  greenState = false;
+  digitalWrite(greenLedPin, LOW);
+  server.sendHeader("Location", "/", true);
+  server.send(302, "text/plain", "");
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  // OLED init (I²C on 21=SDA, 22=SCL)
+  Wire.begin(21, 22);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
+    Serial.println("OLED init failed");
+    while (true) delay(1000);
   }
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+
+  // LED pins (if >12 mA each, drive via MOSFET)
+  pinMode(redLedPin,   OUTPUT);
+  pinMode(greenLedPin, OUTPUT);
+  digitalWrite(redLedPin,   LOW);
+  digitalWrite(greenLedPin, LOW);
+
+  // Connect to Wi‑Fi
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.println("Connecting WiFi...");
+  display.display();
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.println("WiFi Connected");
+  display.print("IP: "); display.println(WiFi.localIP());
+  display.display();
+
+  // Route setup
+  server.on("/",         HTTP_GET, handleRoot);
+  server.on("/red/on",   HTTP_GET, handleRedOn);
+  server.on("/red/off",  HTTP_GET, handleRedOff);
+  server.on("/green/on", HTTP_GET, handleGreenOn);
+  server.on("/green/off",HTTP_GET, handleGreenOff);
+
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop() {
+  // Keep Wi‑Fi alive
+  if (WiFi.status() != WL_CONNECTED) {
+    WiFi.reconnect();
+  }
+  server.handleClient();  // process HTTP requests
 }
