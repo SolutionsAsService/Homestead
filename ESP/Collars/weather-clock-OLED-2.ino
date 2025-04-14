@@ -74,7 +74,7 @@ void loop() {
   unsigned long now = millis();
   ensureWiFi();
 
-  if (now - lastNTP > NTP_INTERVAL)     retryTimeSync();
+  if (now - lastNTP > NTP_INTERVAL)       retryTimeSync();
   if (now - lastWeather > WEATHER_INTERVAL) retryWeatherFetch();
 
   drawDisplay();
@@ -190,7 +190,7 @@ void drawDisplay() {
     strftime(timeBuf, sizeof(timeBuf), "%I:%M %p", &tm);   // 12‑hr w/ AM/PM
     strftime(dateBuf, sizeof(dateBuf), "%m-%d-%Y", &tm);
 
-    display.setCursor(2, 0);   // Line 1
+    display.setCursor(2, 0);   // Line 1
     display.print(timeBuf);
     display.print(" ");
     display.print(dateBuf);
@@ -199,21 +199,20 @@ void drawDisplay() {
     display.print("Time N/A");
   }
 
-  display.setCursor(2, 8);    // Line 2
-  display.printf("T:%.1fC  H:%d%%", tempC, humidity);
+  display.setCursor(2, 8);    // Line 2: both temps
+  display.printf("T:%.1fC  %.1fF", tempC, tempF);
 
-  display.setCursor(2, 16);   // Line 3
+  display.setCursor(2, 16);   // Line 3
   display.print(weatherDesc);
   drawWeatherIcon(iconCode, SCREEN_WIDTH - 12, 16);
 
-  display.setCursor(2, 24);   // Line 4
-  display.printf("W:%.1fm/s F:%.1fF", windSpeed, tempF);
+  display.setCursor(2, 24);   // Line 4: humidity & wind
+  display.printf("H:%d%%  W:%.1fm/s", humidity, windSpeed);
 
   display.display();
 }
 
 void drawWeatherIcon(const String& ic, int x, int y) {
-  // same 8×8 icon logic as before…
   if (ic.startsWith("01")) {
     // sun
     display.drawCircle(x+4, y+4, 3, SSD1306_WHITE);
