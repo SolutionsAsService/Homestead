@@ -14,7 +14,7 @@ const char* city       = "Taos";
 const char* country    = "US";
 const char* owmApiKey  = "29791c1b9f625367055f374a4260a2fc";
 const char* ntpServer  = "pool.ntp.org";
-const char* timezone   = "MST7MDT"; // POSIX TZ string for Mountain Standard/Daylight Time
+const char* timezone   = "MST7MDT"; // Mountain Standard/Daylight Time
 
 // —— Intervals —— //
 const unsigned long WEATHER_INTERVAL = 10UL * 60UL * 1000UL; // 10 min
@@ -35,7 +35,9 @@ unsigned long lastWeather = 0;
 unsigned long lastNTP     = 0;
 
 float   tempC       = 0.0;
+float   tempF       = 0.0;
 int     humidity    = 0;
+float   windSpeed   = 0.0;
 String  weatherDesc = "";
 String  iconCode    = "";
 
@@ -47,7 +49,7 @@ void fetchWeather();
 void retryWeatherFetch();
 void retryTimeSync();
 void drawDisplay();
-void drawWeatherIcon(const String& iconCode, int x, int y);
+void drawWeatherIcon(const String& ic, int x, int y);
 
 void setup() {
   Serial.begin(115200);
@@ -62,25 +64,18 @@ void setup() {
   display.display();
 
   connectWiFi();
-
   if (!syncTimeBlocking()) {
     Serial.println("Error: initial NTP sync failed");
   }
-
-  retryWeatherFetch(); // get weather right away
+  retryWeatherFetch(); // get weather immediately
 }
 
 void loop() {
   unsigned long now = millis();
-
   ensureWiFi();
 
-  if (now - lastNTP > NTP_INTERVAL) {
-    retryTimeSync();
-  }
-  if (now - lastWeather > WEATHER_INTERVAL) {
-    retryWeatherFetch();
-  }
+  if (now - lastNTP > NTP_INTERVAL)       retryTimeSync();
+  if (now - lastWeather > WEATHER_INTERVAL) retryWeatherFetch();
 
   drawDisplay();
   delay(1000);
@@ -90,13 +85,11 @@ void connectWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.printf("Connecting to Wi‑Fi \"%s\"…\n", ssid);
-  
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
     Serial.print('.');
     delay(500);
   }
-  
   if (WiFi.status() == WL_CONNECTED) {
     Serial.printf("\nConnected, IP=%s\n", WiFi.localIP().toString().c_str());
   } else {
@@ -115,7 +108,6 @@ void ensureWiFi() {
 bool syncTimeBlocking() {
   Serial.println("Syncing NTP time…");
   configTzTime(timezone, ntpServer);
-  
   struct tm tm;
   int retries = 0;
   while (!getLocalTime(&tm, 10000) && retries < 3) {
@@ -156,7 +148,9 @@ void fetchWeather() {
     DynamicJsonDocument doc(4096);
     if (!deserializeJson(doc, body)) {
       tempC       = doc["main"]["temp"].as<float>();
+      tempF       = tempC * 9.0 / 5.0 + 32.0;
       humidity    = doc["main"]["humidity"].as<int>();
+      windSpeed   = doc["wind"]["speed"].as<float>();
       weatherDesc = String((const char*)doc["weather"][0]["description"])
                        .substring(0, 16);
       iconCode    = String((const char*)doc["weather"][0]["icon"]);
@@ -193,31 +187,31 @@ void drawDisplay() {
   struct tm tm;
   char timeBuf[16], dateBuf[16];
   if (getLocalTime(&tm, 1000)) {
-    strftime(timeBuf, sizeof(timeBuf), "%H:%M", &tm);
+    strftime(timeBuf, sizeof(timeBuf), "%I:%M %p", &tm);   // 12‑hr w/ AM/PM
     strftime(dateBuf, sizeof(dateBuf), "%m-%d-%Y", &tm);
-    // —— Line 1: time + date, with 2px top margin
-    display.setCursor(2, 2);
+
+    display.setCursor(2, 0);   // Line 1
     display.print(timeBuf);
     display.print(" ");
     display.print(dateBuf);
   } else {
-    display.setCursor(2, 2);
+    display.setCursor(2, 0);
     display.print("Time N/A");
   }
 
-  // —— Line 2: temp & humidity
-  display.setCursor(2, 12);
-  display.printf("T:%.1fC  H:%d%%", tempC, humidity);
+  display.setCursor(2, 8);    // Line 2: both temps
+  display.printf("T:%.1fC  %.1fF", tempC, tempF);
 
-  // —— Line 3: weather description + icon
-  display.setCursor(2, 22);
+  display.setCursor(2, 16);   // Line 3
   display.print(weatherDesc);
-  drawWeatherIcon(iconCode, SCREEN_WIDTH - 12, 22);
+  drawWeatherIcon(iconCode, SCREEN_WIDTH - 12, 16);
+
+  display.setCursor(2, 24);   // Line 4: humidity & wind
+  display.printf("H:%d%%  W:%.1fm/s", humidity, windSpeed);
 
   display.display();
 }
 
-// Draw a tiny 8×8 icon for clear/cloudy/rainy
 void drawWeatherIcon(const String& ic, int x, int y) {
   if (ic.startsWith("01")) {
     // sun
@@ -242,7 +236,7 @@ void drawWeatherIcon(const String& ic, int x, int y) {
     display.drawLine  (x+6, y+9, x+6, y+11, SSD1306_WHITE);
   }
   else {
-    // default: little cloud
+    // default cloud
     display.fillCircle(x+3, y+4, 3, SSD1306_WHITE);
     display.fillCircle(x+6, y+4, 3, SSD1306_WHITE);
     display.fillRect  (x+3, y+4, 6, 4, SSD1306_WHITE);
