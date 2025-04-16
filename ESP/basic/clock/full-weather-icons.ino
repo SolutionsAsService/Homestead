@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <math.h>
 
 // —— OLED config —— //
 #define SCREEN_WIDTH 128
@@ -15,12 +16,10 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// Prototypes
-void drawWeatherIcon(const String& ic, int x, int y);
-
+// List of weather icon codes to preview
 const String codes[] = {
-  "01d","02d","03d","04d","09d",  // row 1
-  "10d","11d","13d","50d"         // row 2
+  "01d", "02d", "03d", "04d", "09d",   // row 1
+  "10d", "11d", "13d", "50d"           // row 2
 };
 
 void setup() {
@@ -31,20 +30,21 @@ void setup() {
     while (1) delay(1000);
   }
   display.clearDisplay();
-  display.display();
 }
 
 void loop() {
   display.clearDisplay();
 
-  // Row 1: codes[0..4]
+  // Row 1
   for (int i = 0; i < 5; i++) {
-    int x = 4 + i * 24;   // 5 icons, spaced 24px apart
+    int x = 4 + i * 24;
     drawWeatherIcon(codes[i], x, 4);
   }
-  // Row 2: codes[5..8]
+
+  // Row 2
   for (int i = 5; i < 9; i++) {
-    int x = 4 + (i-5) * 30;  // 4 icons, spaced 30px apart
+    int j = i - 5;
+    int x = 4 + j * 32;
     drawWeatherIcon(codes[i], x, 20);
   }
 
@@ -52,90 +52,106 @@ void loop() {
   delay(3000);
 }
 
-// Covers icon prefixes 01–04,09–11,13,50
 void drawWeatherIcon(const String& ic, int x, int y) {
   int cx = x + 4, cy = y + 4;
 
-  if (ic.startsWith("01")) {
-    // CLEAR SKY
-    display.fillCircle(cx, cy, 3, SSD1306_WHITE);
-    for (int i = 0; i < 8; i++) {
-      float a = i * PI/4;
-      display.drawLine(
-        cx + cos(a)*4, cy + sin(a)*4,
-        cx + cos(a)*6, cy + sin(a)*6,
-        SSD1306_WHITE
-      );
-    }
+if (ic.startsWith("01")) {
+  // SUN: slightly larger core + 8 proportionally spaced rays
+  display.fillCircle(x + 4, y + 4, 3, SSD1306_WHITE);
+  const int rx[8] = {4, 8, 9, 8, 4, 0, -1, 0};
+  const int ry[8] = {-1, 0, 4, 8, 9, 8, 4, 0};
+  for (int i = 0; i < 8; i++) {
+    display.drawLine(x + 4, y + 4, x + rx[i], y + ry[i], SSD1306_WHITE);
   }
+}
+
+
   else if (ic.startsWith("02")) {
-    // FEW CLOUDS
-    display.fillCircle(cx-1, cy-1, 2, SSD1306_WHITE);
-    display.fillCircle(cx+2, cy+2, 3, SSD1306_WHITE);
-    display.fillCircle(cx+5, cy+2, 3, SSD1306_WHITE);
-    display.fillRect  (cx+1, cy+2, 6, 4, SSD1306_WHITE);
+    // FEW CLOUDS: sun (core radius 3) + gentle rays behind cloud
+    display.fillCircle(cx - 2, cy - 2, 3, SSD1306_WHITE);
+    for (int i = 0; i < 8; i++) {
+      float a = i * PI / 4;
+      int sx0 = cx - 2 + cos(a) * 3;
+      int sy0 = cy - 2 + sin(a) * 3;
+      int sx1 = cx - 2 + cos(a) * 5;
+      int sy1 = cy - 2 + sin(a) * 5;
+      display.drawLine(sx0, sy0, sx1, sy1, SSD1306_WHITE);
+    }
+    display.fillCircle(x + 5, y + 5, 3, SSD1306_WHITE);
+    display.fillCircle(x + 8, y + 6, 2, SSD1306_WHITE);
+    display.fillRect  (x + 5, y + 6, 6, 3, SSD1306_WHITE);
   }
+
   else if (ic.startsWith("03")) {
-    // SCATTERED CLOUDS
-    display.fillCircle(cx+2, cy+2, 3, SSD1306_WHITE);
-    display.fillCircle(cx+6, cy+2, 3, SSD1306_WHITE);
-    display.fillRect  (cx+2, cy+2, 7, 4, SSD1306_WHITE);
+    // SCATTERED CLOUDS: three distinct puffs
+    display.fillCircle(x + 2, y + 5, 3, SSD1306_WHITE);
+    display.fillCircle(x + 6, y + 4, 2, SSD1306_WHITE);
+    display.fillCircle(x + 8, y + 6, 2, SSD1306_WHITE);
+    display.fillRect  (x + 2, y + 5, 7, 4, SSD1306_WHITE);
   }
+
   else if (ic.startsWith("04")) {
-    // BROKEN CLOUDS
-    display.fillCircle(cx+1, cy+3, 3, SSD1306_WHITE);
-    display.fillCircle(cx+5, cy+1, 3, SSD1306_WHITE);
-    display.fillRect  (cx+1, cy+3, 7, 4, SSD1306_WHITE);
+    // BROKEN CLOUDS: denser triple‑puff
+    display.fillCircle(x + 1, y + 5, 3, SSD1306_WHITE);
+    display.fillCircle(x + 5, y + 3, 3, SSD1306_WHITE);
+    display.fillCircle(x + 8, y + 5, 3, SSD1306_WHITE);
+    display.fillRect  (x + 1, y + 5, 9, 4, SSD1306_WHITE);
   }
+
   else if (ic.startsWith("09")) {
-    // SHOWER RAIN
-    display.fillCircle(cx+2, cy+2, 3, SSD1306_WHITE);
-    display.fillCircle(cx+6, cy+2, 3, SSD1306_WHITE);
-    display.fillRect  (cx+2, cy+2, 7, 4, SSD1306_WHITE);
+    // SHOWER RAIN: cloud + 4 drops
+    display.fillCircle(x + 3, y + 4, 3, SSD1306_WHITE);
+    display.fillCircle(x + 7, y + 4, 3, SSD1306_WHITE);
+    display.fillRect  (x + 3, y + 4, 7, 4, SSD1306_WHITE);
     for (int i = 0; i < 4; i++) {
-      display.drawLine(cx+2+i*2, cy+8, cx+2+i*2, cy+10, SSD1306_WHITE);
+      display.drawLine(x + 2 + i * 2, y + 9, x + 2 + i * 2, y + 11, SSD1306_WHITE);
     }
   }
+
   else if (ic.startsWith("10")) {
-    // RAIN
-    display.fillCircle(cx+2, cy+2, 3, SSD1306_WHITE);
-    display.fillCircle(cx+6, cy+2, 3, SSD1306_WHITE);
-    display.fillRect  (cx+2, cy+2, 7, 4, SSD1306_WHITE);
-    display.drawLine(cx+4, cy+8, cx+4, cy+10, SSD1306_WHITE);
-    display.drawLine(cx+6, cy+8, cx+6, cy+10, SSD1306_WHITE);
+    // RAIN: cloud + 2 drops
+    display.fillCircle(x + 3, y + 4, 3, SSD1306_WHITE);
+    display.fillCircle(x + 7, y + 4, 3, SSD1306_WHITE);
+    display.fillRect  (x + 3, y + 4, 7, 4, SSD1306_WHITE);
+    display.drawLine(x + 4, y + 9, x + 4, y + 11, SSD1306_WHITE);
+    display.drawLine(x + 6, y + 9, x + 6, y + 11, SSD1306_WHITE);
   }
+
   else if (ic.startsWith("11")) {
-    // THUNDERSTORM
-    display.fillCircle(cx+2, cy+2, 3, SSD1306_WHITE);
-    display.fillCircle(cx+6, cy+2, 3, SSD1306_WHITE);
-    display.fillRect  (cx+2, cy+2, 7, 4, SSD1306_WHITE);
-    display.drawLine(cx+5, cy+4, cx+4, cy+8, SSD1306_WHITE);
-    display.drawLine(cx+4, cy+8, cx+6, cy+8, SSD1306_WHITE);
-    display.drawLine(cx+6, cy+8, cx+5, cy+12,SSD1306_WHITE);
-  }
+  // THUNDERSTORM: cloud + more jagged lightning bolt
+  display.fillCircle(x + 3, y + 4, 3, SSD1306_WHITE);
+  display.fillCircle(x + 7, y + 4, 3, SSD1306_WHITE);
+  display.fillRect  (x + 3, y + 4, 7, 4, SSD1306_WHITE);
+  // Jagged Z-bolt
+  display.drawLine(x + 5, y + 4, x + 3, y + 7, SSD1306_WHITE);
+  display.drawLine(x + 3, y + 7, x + 6, y + 9, SSD1306_WHITE);
+  display.drawLine(x + 6, y + 9, x + 4, y + 12, SSD1306_WHITE);
+}
+
   else if (ic.startsWith("13")) {
-    // SNOW
-    display.fillCircle(cx+2, cy+2, 3, SSD1306_WHITE);
-    display.fillCircle(cx+6, cy+2, 3, SSD1306_WHITE);
-    display.fillRect  (cx+2, cy+2, 7, 4, SSD1306_WHITE);
+    // SNOW: cloud + crisp flakes
+    display.fillCircle(x + 3, y + 4, 3, SSD1306_WHITE);
+    display.fillCircle(x + 7, y + 4, 3, SSD1306_WHITE);
+    display.fillRect  (x + 3, y + 4, 7, 4, SSD1306_WHITE);
     for (int i = 0; i < 3; i++) {
-      int px = cx+3 + i*2, py = cy+8;
-      display.drawPixel(px,   py,   SSD1306_WHITE);
-      display.drawPixel(px,   py+2, SSD1306_WHITE);
-      display.drawPixel(px-1, py+1, SSD1306_WHITE);
-      display.drawPixel(px+1, py+1, SSD1306_WHITE);
+      int px = x + 4 + i * 2, py = y + 9;
+      display.drawLine(px, py, px, py + 2, SSD1306_WHITE);
+      display.drawLine(px - 1, py + 1, px + 1, py + 1, SSD1306_WHITE);
     }
   }
+
   else if (ic.startsWith("50")) {
     // MIST
     for (int i = 0; i < 3; i++) {
-      display.drawFastHLine(cx-3, cy-1 + i*3, 7, SSD1306_WHITE);
+      display.drawFastHLine(cx - 3, cy - 1 + i * 3, 7, SSD1306_WHITE);
     }
   }
+
   else {
     // DEFAULT CLOUD
-    display.fillCircle(cx+2, cy+2, 3, SSD1306_WHITE);
-    display.fillCircle(cx+6, cy+2, 3, SSD1306_WHITE);
-    display.fillRect  (cx+2, cy+2, 7, 4, SSD1306_WHITE);
+    display.fillCircle(x + 4, y + 5, 3, SSD1306_WHITE);
+    display.fillCircle(x + 8, y + 5, 3, SSD1306_WHITE);
+    display.fillRect  (x + 4, y + 5, 7, 4, SSD1306_WHITE);
   }
 }
+
