@@ -97,38 +97,46 @@ void drawWeatherIcon(const String& ic, int x, int y) {
   }
 }
 
-// —— Refined 8×8 moon phases (0=new …7=waning crescent) —— //
+// —— Perfect half‑circle moon phases (0=new …7=waning crescent) —— //
 void drawMoonIcon(int phase, int x, int y) {
-  // Outline
+  // Draw outline circle
   display.drawCircle(x+4, y+4, 3, SSD1306_WHITE);
 
   switch (phase) {
-    case 0: // New Moon: empty
+    case 0:
+      // New Moon: empty
       break;
-    case 1: // Waxing Crescent: sliver on right
+    case 1:
+      // Waxing Crescent: small sliver on right
       display.fillCircle(x+5, y+4, 3, SSD1306_WHITE);
       display.fillCircle(x+3, y+4, 3, SSD1306_BLACK);
       break;
-    case 2: // First Quarter: right half (rounded)
+    case 2:
+      // First Quarter: perfect right half
       display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
       display.fillCircle(x+1, y+4, 3, SSD1306_BLACK);
       break;
-    case 3: // Waxing Gibbous: 3/4
+    case 3:
+      // Waxing Gibbous: 3/4
       display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
       display.fillCircle(x+2, y+4, 3, SSD1306_BLACK);
       break;
-    case 4: // Full Moon: fully lit
+    case 4:
+      // Full Moon: fully lit
       display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
       break;
-    case 5: // Waning Gibbous: 3/4 left
-      display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
-      display.fillCircle(x+6, y+4, 3, SSD1306_BLACK);
-      break;
-    case 6: // Last Quarter: left half (rounded)
+    case 5:
+      // Waning Gibbous: 3/4 left
       display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
       display.fillCircle(x+6, y+4, 3, SSD1306_BLACK);
       break;
-    case 7: // Waning Crescent: sliver on left
+    case 6:
+      // Last Quarter: perfect left half
+      display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
+      display.fillCircle(x+7, y+4, 3, SSD1306_BLACK);
+      break;
+    case 7:
+      // Waning Crescent: small sliver on left
       display.fillCircle(x+3, y+4, 3, SSD1306_WHITE);
       display.fillCircle(x+5, y+4, 3, SSD1306_BLACK);
       break;
