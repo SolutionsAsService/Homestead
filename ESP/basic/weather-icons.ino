@@ -1,3 +1,5 @@
+// Sketch displays several weather and moon phase icons - testing for weather clock
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
