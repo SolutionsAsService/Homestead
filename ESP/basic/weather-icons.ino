@@ -31,15 +31,20 @@ void setup() {
 void loop() {
   display.clearDisplay();
 
-  // Weather icons
+  // —— Weather icons —— //
   drawWeatherIcon("01", 10, 12);  // Sun
   drawWeatherIcon("03", 30, 12);  // Cloud
   drawWeatherIcon("10", 50, 12);  // Rain
   drawWeatherIcon("13", 70, 12);  // Snow
 
-  // Moon phases 0…7
-  for (int p = 0; p < 8; p++) {
-    drawMoonIcon(p, 90 + p*4, 12);
+  // —— Moon phases in two rows —— //
+  // Phases 0–3 on top row:
+  for (int p = 0; p < 4; p++) {
+    drawMoonIcon(p, 10 + p * 20, 0);
+  }
+  // Phases 4–7 on bottom row:
+  for (int p = 4; p < 8; p++) {
+    drawMoonIcon(p, 10 + (p - 4) * 20, 16);
   }
 
   display.display();
@@ -98,28 +103,28 @@ void drawMoonIcon(int phase, int x, int y) {
   display.drawCircle(x+4, y+4, 3, SSD1306_WHITE);
 
   switch (phase) {
-    case 0: // New Moon (filled)
+    case 0: // New Moon
       display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
       break;
-    case 1: // Waxing Crescent (small sliver)
+    case 1: // Waxing Crescent
       display.fillCircle(x+5, y+4, 2, SSD1306_WHITE);
       break;
-    case 2: // First Quarter (right half)
+    case 2: // First Quarter
       display.fillRect(x+4, y+1, 3, 6, SSD1306_WHITE);
       break;
-    case 3: // Waxing Gibbous (3/4)
+    case 3: // Waxing Gibbous
       display.fillRect(x+3, y+1, 5, 6, SSD1306_WHITE);
       break;
-    case 4: // Full Moon (filled)
+    case 4: // Full Moon
       display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
       break;
-    case 5: // Waning Gibbous (left 3/4)
+    case 5: // Waning Gibbous
       display.fillRect(x+1, y+1, 5, 6, SSD1306_WHITE);
       break;
-    case 6: // Last Quarter (left half)
+    case 6: // Last Quarter
       display.fillRect(x+1, y+1, 3, 6, SSD1306_WHITE);
       break;
-    case 7: // Waning Crescent (small sliver)
+    case 7: // Waning Crescent
       display.fillCircle(x+3, y+4, 2, SSD1306_WHITE);
       break;
   }
