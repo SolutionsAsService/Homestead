@@ -20,9 +20,8 @@ void drawMoonIcon(int phase, int x, int y);
 void setup() {
   Serial.begin(115200);
   Wire.begin(SDA_PIN, SCL_PIN);
-
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
-    Serial.println("OLED init failed"); 
+    Serial.println("OLED init failed");
     while (1) delay(1000);
   }
   display.clearDisplay();
@@ -32,35 +31,28 @@ void setup() {
 void loop() {
   display.clearDisplay();
 
-  // Draw a sun icon (icon code "01") at x=10,y=12
-  drawWeatherIcon("01", 10, 12);
+  // Weather icons
+  drawWeatherIcon("01", 10, 12);  // Sun
+  drawWeatherIcon("03", 30, 12);  // Cloud
+  drawWeatherIcon("10", 50, 12);  // Rain
+  drawWeatherIcon("13", 70, 12);  // Snow
 
-  // Draw a cloud icon ("03") next to it
-  drawWeatherIcon("03", 30, 12);
-
-  // Draw rain icon ("10") next to that
-  drawWeatherIcon("10", 50, 12);
-
-  // Draw snow icon ("13") next
-  drawWeatherIcon("13", 70, 12);
-
-  // Draw new moon (phase=0) at x=90,y=12
-  drawMoonIcon(0, 90, 12);
-
-  // Draw first quarter (phase=2) next
-  drawMoonIcon(2, 110, 12);
+  // Moon phases 0…7
+  for (int p = 0; p < 8; p++) {
+    drawMoonIcon(p, 90 + p*4, 12);
+  }
 
   display.display();
-  delay(2000);
+  delay(3000);
 }
 
-// 8×8 weather icon (no trig) — you can tweak these shapes
+// —— Improved 8×8 weather icons —— //
 void drawWeatherIcon(const String& ic, int x, int y) {
   if (ic.startsWith("01")) {
-    // SUN: center + 8 rays
-    display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
-    const int rx[8] = {4,6,8,6,4,2,0,2};
-    const int ry[8] = {0,2,4,6,8,6,4,2};
+    // SUN: small core + 8 rays
+    display.fillCircle(x+4, y+4, 2, SSD1306_WHITE);
+    const int rx[8] = {4,7,8,7,4,1,0,1};
+    const int ry[8] = {0,1,4,7,8,7,4,1};
     for (int i = 0; i < 8; i++) {
       display.drawLine(x+4, y+4, x+rx[i], y+ry[i], SSD1306_WHITE);
     }
@@ -100,14 +92,35 @@ void drawWeatherIcon(const String& ic, int x, int y) {
   }
 }
 
-// 8×8 moon icon (phase 0…7) — simple waxing/waning shadow
+// —— Detailed 8×8 moon phases (0=new …7=waning crescent) —— //
 void drawMoonIcon(int phase, int x, int y) {
+  // Outline
   display.drawCircle(x+4, y+4, 3, SSD1306_WHITE);
-  if (phase < 4) {
-    // waxing → shadow on left
-    display.fillRect(x+1, y+1, 3, 6, SSD1306_BLACK);
-  } else {
-    // waning → shadow on right
-    display.fillRect(x+4, y+1, 3, 6, SSD1306_BLACK);
+
+  switch (phase) {
+    case 0: // New Moon (filled)
+      display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
+      break;
+    case 1: // Waxing Crescent (small sliver)
+      display.fillCircle(x+5, y+4, 2, SSD1306_WHITE);
+      break;
+    case 2: // First Quarter (right half)
+      display.fillRect(x+4, y+1, 3, 6, SSD1306_WHITE);
+      break;
+    case 3: // Waxing Gibbous (3/4)
+      display.fillRect(x+3, y+1, 5, 6, SSD1306_WHITE);
+      break;
+    case 4: // Full Moon (filled)
+      display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
+      break;
+    case 5: // Waning Gibbous (left 3/4)
+      display.fillRect(x+1, y+1, 5, 6, SSD1306_WHITE);
+      break;
+    case 6: // Last Quarter (left half)
+      display.fillRect(x+1, y+1, 3, 6, SSD1306_WHITE);
+      break;
+    case 7: // Waning Crescent (small sliver)
+      display.fillCircle(x+3, y+4, 2, SSD1306_WHITE);
+      break;
   }
 }
