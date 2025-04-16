@@ -1,3 +1,5 @@
+// 4 Line Weather Clock - Time, Date Temp (F+C), Weather, Humidity, Wind Speed
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <WiFi.h>
