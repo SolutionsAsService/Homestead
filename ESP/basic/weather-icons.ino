@@ -31,20 +31,20 @@ void setup() {
 void loop() {
   display.clearDisplay();
 
-  // —— Weather icons —— //
-  drawWeatherIcon("01", 10, 12);  // Sun
-  drawWeatherIcon("03", 30, 12);  // Cloud
-  drawWeatherIcon("10", 50, 12);  // Rain
-  drawWeatherIcon("13", 70, 12);  // Snow
+  // —— Weather icons (one row on left) —— //
+  drawWeatherIcon("01",  4, 12);  // Sun
+  drawWeatherIcon("03", 24, 12);  // Cloud
+  drawWeatherIcon("10", 44, 12);  // Rain
+  drawWeatherIcon("13", 64, 12);  // Snow
 
-  // —— Moon phases in two rows —— //
-  // Phases 0–3 on top row:
+  // —— Moon phases (two rows on right) —— //
+  // Top row (phases 0–3)
   for (int p = 0; p < 4; p++) {
-    drawMoonIcon(p, 10 + p * 20, 0);
+    drawMoonIcon(p, 84 + p*10, 0);
   }
-  // Phases 4–7 on bottom row:
+  // Bottom row (phases 4–7)
   for (int p = 4; p < 8; p++) {
-    drawMoonIcon(p, 10 + (p - 4) * 20, 16);
+    drawMoonIcon(p, 84 + (p-4)*10, 16);
   }
 
   display.display();
@@ -83,10 +83,10 @@ void drawWeatherIcon(const String& ic, int x, int y) {
     display.fillCircle(x+7, y+4, 3, SSD1306_WHITE);
     display.fillRect  (x+3, y+4, 7, 4, SSD1306_WHITE);
     for (int dx = 4; dx <= 8; dx += 2) {
-      display.drawPixel(x+dx, y+9,  SSD1306_WHITE);
-      display.drawPixel(x+dx, y+11, SSD1306_WHITE);
-      display.drawPixel(x+dx-1, y+10, SSD1306_WHITE);
-      display.drawPixel(x+dx+1, y+10, SSD1306_WHITE);
+      display.drawPixel(x+dx,  y+9,  SSD1306_WHITE);
+      display.drawPixel(x+dx,  y+11, SSD1306_WHITE);
+      display.drawPixel(x+dx-1,y+10, SSD1306_WHITE);
+      display.drawPixel(x+dx+1,y+10, SSD1306_WHITE);
     }
   }
   else {
@@ -97,35 +97,40 @@ void drawWeatherIcon(const String& ic, int x, int y) {
   }
 }
 
-// —— Detailed 8×8 moon phases (0=new …7=waning crescent) —— //
+// —— Refined 8×8 moon phases (0=new …7=waning crescent) —— //
 void drawMoonIcon(int phase, int x, int y) {
   // Outline
   display.drawCircle(x+4, y+4, 3, SSD1306_WHITE);
 
   switch (phase) {
-    case 0: // New Moon
+    case 0: // New Moon: empty
+      break;
+    case 1: // Waxing Crescent: sliver on right
+      display.fillCircle(x+5, y+4, 3, SSD1306_WHITE);
+      display.fillCircle(x+3, y+4, 3, SSD1306_BLACK);
+      break;
+    case 2: // First Quarter: right half (rounded)
+      display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
+      display.fillCircle(x+1, y+4, 3, SSD1306_BLACK);
+      break;
+    case 3: // Waxing Gibbous: 3/4
+      display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
+      display.fillCircle(x+2, y+4, 3, SSD1306_BLACK);
+      break;
+    case 4: // Full Moon: fully lit
       display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
       break;
-    case 1: // Waxing Crescent
-      display.fillCircle(x+5, y+4, 2, SSD1306_WHITE);
-      break;
-    case 2: // First Quarter
-      display.fillRect(x+4, y+1, 3, 6, SSD1306_WHITE);
-      break;
-    case 3: // Waxing Gibbous
-      display.fillRect(x+3, y+1, 5, 6, SSD1306_WHITE);
-      break;
-    case 4: // Full Moon
+    case 5: // Waning Gibbous: 3/4 left
       display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
+      display.fillCircle(x+6, y+4, 3, SSD1306_BLACK);
       break;
-    case 5: // Waning Gibbous
-      display.fillRect(x+1, y+1, 5, 6, SSD1306_WHITE);
+    case 6: // Last Quarter: left half (rounded)
+      display.fillCircle(x+4, y+4, 3, SSD1306_WHITE);
+      display.fillCircle(x+6, y+4, 3, SSD1306_BLACK);
       break;
-    case 6: // Last Quarter
-      display.fillRect(x+1, y+1, 3, 6, SSD1306_WHITE);
-      break;
-    case 7: // Waning Crescent
-      display.fillCircle(x+3, y+4, 2, SSD1306_WHITE);
+    case 7: // Waning Crescent: sliver on left
+      display.fillCircle(x+3, y+4, 3, SSD1306_WHITE);
+      display.fillCircle(x+5, y+4, 3, SSD1306_BLACK);
       break;
   }
 }
