@@ -31,11 +31,26 @@ const unsigned long moveInterval = 150; // ms
 
 void setup() {
   Serial.begin(9600);  // Serial debugging
+  pinMode(LED_BUILTIN, OUTPUT);  // Onboard LED
+
+  // Blink onboard LED 3 times to indicate sketch upload success
+  blinkOnboardLED(3, 200);
+
   matrix.begin(0x70);  // Default I2C address
   matrix.clear();
   matrix.writeDisplay();
   pinMode(joyX, INPUT);
   pinMode(joyY, INPUT);
+}
+
+// Blink function: count = number of blinks, delayMs = blink speed
+void blinkOnboardLED(int count, int delayMs) {
+  for (int i = 0; i < count; i++) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(delayMs);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(delayMs);
+  }
 }
 
 void shiftSandX(int dir) {
